@@ -108,7 +108,8 @@ void reply(String s) {
 }
 
 void turnServo() {
-    stepper1.moveTo(z*10000);
+    stepper1.moveTo(z*1000);
+    stepper1.run();
   }
 /*
   // "?ver"   ->   Vers:LS
