@@ -17,22 +17,29 @@
 // Parity,None
 // StopBits,1
 
-#include <Servo.h>
-Servo myservo; 
-int servoPin = 3;
-#include <LiquidCrystal.h>
-LiquidCrystal lcd(8, 9, 4, 5, 6, 7);
+#include <AccelStepper.h>
+ 
+// 定义电机控制用常量
+const int enablePin = 8;  // 使能控制引脚
+ 
+const int zdirPin = 5;     // z方向控制引脚 (用的是cnc shield上的x)
+const int zstepPin = 2;    // z步进控制引脚
+ 
+AccelStepper stepper1(1,zstepPin,zdirPin);//建立步进电机对象1
 String cmd = "" ;
 float z = 0.0;
 
 void setup() {
   Serial.begin( 9600 );
-  myservo.attach(servoPin);
-  lcd.begin(16, 2);
-  lcd.print("MiFoBio 2018");
-  lcd.setCursor(0, 1);
-  lcd.print("vLStep-Z ready");
-  delay(1000);
+  pinMode(zstepPin,OUTPUT);     // Arduino控制A4988x步进引脚为输出模式
+  pinMode(zdirPin,OUTPUT);      // Arduino控制A4988x方向引脚为输出模式
+  
+  pinMode(enablePin,OUTPUT);   // Arduino控制A4988使能引脚为输出模式
+  digitalWrite(enablePin,LOW); // 将使能控制引脚设置为低电平从而让
+                               // 电机驱动板进入工作状态
+                                
+  stepper1.setMaxSpeed(300.0);     // 设置电机最大速度300 
+  stepper1.setAcceleration(20.0);  // 设置电机加速度20.0  
   reply ("Vers:LS");
 }
 char c = '*';
@@ -72,11 +79,6 @@ void processCommand(String s) {
   } else if (s.startsWith("?pos z")) {
     String zs = String(z, 1);
     reply (zs);
-    lcd.clear();
-    lcd.print("MiFoBio 2018");
-    lcd.setCursor(0, 1);
-    lcd.print("Z:");
-    lcd.print(zs);
   } else if (s.startsWith("?lim z")) {
     reply ("0.0 100.0");
   } else if (s.startsWith("!pos z")) {
@@ -106,7 +108,7 @@ void reply(String s) {
 }
 
 void turnServo() {
-    myservo.write(map(z,-100,100,0,180));
+    stepper1.moveTo(z*10000);
   }
 /*
   // "?ver"   ->   Vers:LS
