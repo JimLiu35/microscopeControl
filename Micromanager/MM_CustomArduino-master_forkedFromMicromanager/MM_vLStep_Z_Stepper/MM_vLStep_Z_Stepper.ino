@@ -105,11 +105,13 @@ void processCommand(String s) {
 void reply(String s) {
   Serial.print(s);
   Serial.print("\r");
+
 }
 
 void turnServo() {
     stepper1.moveTo(z*1000);
     stepper1.run();
+    Serial.println(z);
   }
 /*
   // "?ver"   ->   Vers:LS

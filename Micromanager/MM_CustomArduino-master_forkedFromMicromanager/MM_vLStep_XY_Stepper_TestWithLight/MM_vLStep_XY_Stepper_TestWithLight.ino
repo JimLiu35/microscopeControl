@@ -31,7 +31,7 @@ const int G_LED_Pin = 10;
 bool state_x = 0;
 bool state_y = 0;
 
-int Maxspeed = 300.0;        //step/s
+int Maxspeed = 30000000000.0;        //step/s
 int Acceleration = 20.0;     //step/s^2
 const int Reduction = 2;     //Reduction ratio for actuators
 const int BaseRes = 1.8;        //Base resolution of actuator in deg
@@ -40,9 +40,9 @@ const int stepSize = Pitch/Reduction/360*BaseRes; // step size of motor in micro
 AccelStepper stepper1(1,xstepPin,xdirPin);//建立步进电机对象1
 AccelStepper stepper2(1,ystepPin,ydirPin);//建立步进电机对象2
 
-int Mode_x = 0; // Helps with controlling units for x motor
-int Mode_y = 0; // Helps with controlling units for y motor
-int Mode_xy = 0; // Helps with controlling units for xy stage
+int Mode_x = 2; // Helps with controlling units for x motor
+int Mode_y = 2; // Helps with controlling units for y motor
+int Mode_xy = 1; // Helps with controlling units for xy stage
 
 String xyPitch = "2000.0"; // in microns
 String cmd = "" ;
@@ -112,22 +112,18 @@ void processCommand(String s) {
     reply(String(Acceleration/Reduction*stepSize/1000000)); //converted acceleration to m/s^2
  } else if (s.startsWith("?accel y")) {
     reply(String(Acceleration*stepSize/1000000)); //converted acceleration to m/s^2
-
-  } else if (s.startsWith("!dim x 2")) {  //Dealing with 
-    Mode_x = 2;
     
   
     //Setting Acceleration Values
   } else if (s.startsWith("!accel x")) {
     String xa = s.substring(s.indexOf("!accel x ") + 1);
-    stepper1.setAcceleration(xa.toFloat()*Reduction/stepSize*1000000); //converts m/s^2 to step/s^2
+    Acceleration = xa.toFloat()*Reduction/stepSize*1000000;//converts m/s^2 to step/s^2
+    stepper1.setAcceleration(Acceleration); 
   } else if (s.startsWith("!accel y")) {
     String ya = s.substring(s.indexOf("!accel y ") + 1);
-    stepper2.setAcceleration(ya.toFloat()*Reduction/stepSize*1000000); //converts m/s^2 to step/s^2
-      
-  } else if (s.startsWith("!dim y 2")) {
-    Mode_y = 2;
-    
+    Acceleration = ya.toFloat()*Reduction/stepSize*1000000; //converts m/s^2 to step/s^2
+    stepper2.setAcceleration(Acceleration); 
+
   } else if (s.startsWith("!vel y")) {
     String yv = s.substring(s.indexOf("!vel x ") + 1);
     float yv_num = yv.toFloat();
@@ -153,8 +149,8 @@ void processCommand(String s) {
   //Tells micromanager current stage position  
   } else if (s.startsWith("?pos")) { 
     if (Mode_xy == 1) { // Info should be in microns
-      String xPos = String(x, 1);
-      String xy_pos = xPos + " " + String(y, 1);
+      String xPos = String(x);
+      String xy_pos = xPos + " " + String(y);
       reply (xy_pos);
       }
     else if (Mode_xy == 0){ // Asking for current step
@@ -170,11 +166,17 @@ void processCommand(String s) {
     Mode_xy = 1;
   } else if (s.startsWith("!dim 0 0")) { // switch to steps
     Mode_xy = 0;
+  } else if (s.startsWith("!dim x 2")) { // switch to steps
+    Mode_x = 2;
+  } else if (s.startsWith("!dim y 2")) { // switch to steps
+    Mode_y = 2;
 
   // Relative Motion Control
   } else if (s.startsWith("!mor ")) {   //relative motion
-    String delta_x = s.substring(s.indexOf("!mor ") + 1);
-    String delta_y = s.substring(s.indexOf("!mor ") + 3);
+    String delta_x = s.substring(s.indexOf("!mor ") + 5);
+    Serial.println(delta_x+" ");
+    String delta_y = s.substring(s.indexOf("!mor ") + 6);
+    Serial.println(delta_y+" ");
     float delta_x_num = delta_x.toFloat();
     float delta_y_num = delta_y.toFloat();
       if (Mode_xy == 0){ 
@@ -187,8 +189,8 @@ void processCommand(String s) {
 
   // Absolute Motion Control  
   } else if (s.startsWith("!moa ")) {   //relative motion, assume in um
-    String apos_x = s.substring(s.indexOf("!moa ") + 1);
-    String apos_y = s.substring(s.indexOf("!moa ") + 3);
+    String apos_x = s.substring(s.indexOf("!moa ") + 5);
+    String apos_y = s.substring(s.indexOf("!moa ") + 6);
     float apos_x_num = apos_x.toFloat();
     float apos_y_num = apos_y.toFloat();
     if (Mode_xy == 0){ 
