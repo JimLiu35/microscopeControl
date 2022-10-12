@@ -110,7 +110,7 @@ void reply(String s) {
 
 void turnServo() {
     stepper1.moveTo(z*1000);
-    stepper1.run();
+    stepper1.runToPosition();
     Serial.println(z);
   }
 /*

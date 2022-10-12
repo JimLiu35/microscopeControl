@@ -271,8 +271,8 @@ void reply(String s) {
 void turnServoXY() {
     stepper1.moveTo(x*10000);
     stepper2.moveTo(y*10000);
-    stepper1.run();
-    stepper2.run();
+    stepper1.runToPosition();
+    stepper2.runToPosition();
   }
 
 /*
