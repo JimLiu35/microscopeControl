@@ -174,9 +174,7 @@ void processCommand(String s) {
   // Relative Motion Control
   } else if (s.startsWith("!mor ")) {   //relative motion
     String delta_x = s.substring(s.indexOf("!mor ") + 5);
-    Serial.println(delta_x+" ");
     String delta_y = s.substring(s.indexOf("!mor ") + 6);
-    Serial.println(delta_y+" ");
     float delta_x_num = delta_x.toFloat();
     float delta_y_num = delta_y.toFloat();
       if (Mode_xy == 0){ 
