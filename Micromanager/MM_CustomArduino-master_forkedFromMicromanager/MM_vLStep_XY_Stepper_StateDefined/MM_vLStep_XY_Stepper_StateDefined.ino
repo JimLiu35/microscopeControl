@@ -1,5 +1,5 @@
 // An arduino firmware that can be used with the Micro-Manager LStep Z-Stage device adaptor.
-// Allows building simple 1-axis stage devices.
+// Allows building simple 2-axis stage devices.
 // version 0.1
 // JM 2016-2018
 
@@ -81,8 +81,9 @@ void loop()
     cmd = Serial.readStringUntil('\r');
     processCommand(cmd);
     cmd = "";
-    
   }
+  stepper1.run();
+  stepper2.run();
 }
 
 void processCommand(String s) {
@@ -269,8 +270,6 @@ void reply(String s) {
 void turnServoXY() {
     stepper1.moveTo(x*10000);
     stepper2.moveTo(y*10000);
-    stepper1.runToPosition();
-    stepper2.runToPosition();
   }
 
 /*
