@@ -430,7 +430,7 @@ void Hub::QueryPeripheralInventory()
       // Read out report
       std::string report;
       report = "";
-      ret = GetSerialAnswer(port_.c_str(), ":", report);
+      ret = GetSerialAnswer(port_.c_st mr(), ":", report);
       if (ret != DEVICE_OK) 
          return;
       if (report.length() < 1)
@@ -620,7 +620,7 @@ void Hub::GetDiscoDeviceProperty(int peripheralNum, short propertyNumber,char* p
       {
          switch( propertyNumber)
          {
-            //there is something interesting in here, some of the axes use the the 1-character device ID as the "ID" and some use something else...
+            //there is svomething interesting in here, some of the axes use the the 1-character device ID as the "ID" and some use something else...
             // so for today I will call these two properties ONECHARACTERDEVICEID and DEVICEADDRESS
          case 0:
             if( 0 != propertyName)
