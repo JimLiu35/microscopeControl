@@ -49,8 +49,9 @@ void loop()
   if (Serial.available()) {
     cmd = Serial.readStringUntil('\r');
     processCommand(cmd);
-    cmd = "";
+    cmd = "";    
   }
+  stepper1.run();
 }
 
 void processCommand(String s) {
@@ -109,33 +110,6 @@ void reply(String s) {
 }
 
 void turnServo() {
-    stepper1.moveTo(z*1000);
-    stepper1.runToPosition();
-    Serial.println(z);
+    stepper1.moveTo(z*10);
+
   }
-/*
-  // "?ver"   ->   Vers:LS
-  // "?det"   ->   11F31  seul le 2nd least significant byte (le 3) est important = 3 axes
-  // "?statusaxis" -> @ si dispo et M si busy
-  // "!autostatus 0"
-  // "?pitch z" -> 50.0
-  // "!dim z 2" mettre en microns
-  // "!dim z 1"
-  // "?vel z"  -> 100.0
-  // "!vel z 100"
-  // "?accel z" -> 1.0
-  // "!accel z 1"
-  "a" -> abort ??
-  "!moa z 10"  move z to absolute 10
-  // "?err"  retourner 0
-  // "!mor z " move z by relative 10
-  // "?pos z" query current z pos -> return z pos
-  // "?lim z" query limits, -> 0.0 100.0
-  // "!pos z 0" set origin
-  // "!pos z 20 fixe cette origine pour le controlle
-  // "?status"  -> OK...
-  "!dim z 0" set as steps.
-  "MOA Z " move to abs step pos
-  "?pos z" get position as steps
-  //"!speed z 10" lance le mouvement en mm/sec
-*/
