@@ -45,8 +45,8 @@ void loop() {
     processCommand(cmd);
     cmd = "";
   }
-  camPos_deg = map(camPos,0,10,0,180);
-  lampPos_deg = map(lampPos,0,10,0,180);
+  camPos_deg = map(camPos,0,3,0,180);
+  lampPos_deg = map(lampPos,0,3,0,180);
   camFilter.write(camPos_deg);
   lampFilter.write(lampPos_deg);
 }
