@@ -58,6 +58,9 @@ void reply(String s) {
 }
 
 void processCommand(String s){
+  if (s.startsWith(String(0xff41))){
+    s = s.substring(s.indexOf(String(0xff41))+2);
+    }
   //Responding to query information
   if (s.startsWith("VER")){
     reply("Vers: DD");
@@ -115,6 +118,7 @@ void processCommand(String s){
    else if (s.endsWith("63:")){
     Serial.print("66:");
     }
-    
+   else{
+    Serial.print(s);} //Useful for debugging with Micromanager
   
 }
