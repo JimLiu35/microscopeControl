@@ -14,25 +14,21 @@
 // StopBits,1
 
 #include <Servo.h>
-
+int pos;                    // Will be used later for smoothing out servo control
 Servo camFilter;
 Servo lampFilter;
 String cmd = "" ;
 const int camSig = 5;
-const int lampSig = 6;
 float TransDelay = 10.0;   //Defines transmission delay between filterwheel and micromanager
 int camPos = 0;
-int lampPos = 0;
-
 int camPos_deg = 0;
-int lampPos_deg = 0;
 
 void setup() {
   // Initialize filter positions
   camFilter.attach(camSig);
-  lampFilter.attach(lampSig);
   camFilter.write(camPos);
-  lampFilter.write(lampPos);
+  delay(1000);
+  camFilter.detach();
 
   // Initialize connectiton to micromanager
   Serial.begin(9600);
@@ -45,10 +41,6 @@ void loop() {
     processCommand(cmd);
     cmd = "";
   }
-  camPos_deg = map(camPos,0,3,0,180);
-  lampPos_deg = map(lampPos,0,3,0,180);
-  camFilter.write(camPos_deg);
-  lampFilter.write(lampPos_deg);
 }
 
 
@@ -111,7 +103,7 @@ void processCommand(String s){
     else {
       camPos = cmd.toFloat();
       } 
-    lampPos = camPos;
+    turnServo();
     reply("AA");
     }
    //Creating a sudo-id response to trick MM 
@@ -121,4 +113,25 @@ void processCommand(String s){
    else{
     Serial.print(s);} //Useful for debugging with Micromanager
   
+}
+
+void turnServo(){
+    camPos_deg = map(camPos,0,2,0,150);
+    camFilter.attach(camSig);
+    int oldPos_deg = camFilter.read();
+    if (camPos_deg>oldPos_deg){
+         for (int pos = oldPos_deg; pos <= camPos_deg; pos += 1) { // goes from 0 degrees to 180 degrees
+              // in steps of 1 degree
+              camFilter.write(camPos_deg);
+              delay(10);      
+         }
+    }
+    else{
+         for (int pos = oldPos_deg; pos >= camPos_deg; pos -= 1) { // goes from 0 degrees to 180 degrees
+              // in steps of 1 degree
+              camFilter.write(pos);
+              delay(10);      
+         }      
+      }
+    camFilter.detach();
 }
