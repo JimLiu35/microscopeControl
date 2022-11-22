@@ -25,8 +25,8 @@ const int xstepPin = 2;    // x步进控制引脚
 const int ydirPin = 6;     // y方向控制引脚
 const int ystepPin = 3;    // y步进控制引脚
 
-const int x_LimPin = 7;    // x limit switch pinout
-const int y_LimPin = 8;    // y limit switch pinout
+const int x_LimPin = 11;    // x limit switch pinout
+const int y_LimPin = 12;    // y limit switch pinout
 
 bool state_x = 0;
 bool state_y = 0;

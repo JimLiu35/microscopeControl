@@ -9,17 +9,22 @@ const int xstepPin = 2;    // x步进控制引脚
 const int ydirPin = 6;     // y方向控制引脚
 const int ystepPin = 3;    // y步进控制引脚
 
-const int R_LED_Pin = 9;
-const int G_LED_Pin = 10;
 bool state_x = 0;
 bool state_y = 0;
 
-int Maxspeed = 30000000000.0;        //step/s
-int Acceleration = 20.0;     //step/s^2
-const int Reduction = 2;     //Reduction ratio for actuators
-const int BaseRes = 1.8;        //Base resolution of actuator in deg
-const int Pitch = 2000.0;       //Lead screw pitch in microns
-const int stepSize = Pitch / Reduction / 360 * BaseRes; // step size of motor in microns
+
+const int x_LimPin = 11;    // x limit switch pinout
+const int y_LimPin = 12;    // y limit switch pinout
+
+const float Maxspeed = 500000.0;        //step/s
+const float Acceleration = 1000.0;     //step/s^2
+const float Reduction = 1;     //Reduction ratio for actuators
+const float BaseRes_y = .9;        //Base resolution of actuator in deg
+const float BaseRes_x = 1.8;        //Base resolution of actuator in deg
+const float Pitch = 2000.0;       //Lead screw pitch in microns
+const float stepSize_x = Pitch / Reduction / 360 * BaseRes_x; // step size of motor in microns
+const float stepSize_y = Pitch / Reduction / 360 * BaseRes_y; // step size of motor in microns
+
 AccelStepper stepper1(1, xstepPin, xdirPin); //建立步进电机对象1
 AccelStepper stepper2(1, ystepPin, ydirPin); //建立步进电机对象2
 int firstSpace = 0;         //Used to parse commands for x
@@ -36,8 +41,8 @@ float y = 0.0;
 float x_old = x;
 float y_old = y;
 
-Encoder myEnc2(12, 13);
-Encoder myEnc(11, 10);
+Encoder myEnc2(18, 19);
+Encoder myEnc(20, 21);
 //   avoid using pins with LEDs attached
 long newPosition = 0;
 long oldPosition  = -999;
@@ -52,10 +57,6 @@ void setup() {
   pinMode(xdirPin, OUTPUT);     // Arduino控制A4988x方向引脚为输出模式
   pinMode(ystepPin, OUTPUT);    // Arduino控制A4988y步进引脚为输出模式
   pinMode(ydirPin, OUTPUT);     // Arduino控制A4988y方向引脚为输出模式
-  pinMode(R_LED_Pin, OUTPUT);
-  pinMode(G_LED_Pin, OUTPUT);
-  digitalWrite(R_LED_Pin, LOW);
-  digitalWrite(G_LED_Pin, LOW);
   pinMode(enablePin, OUTPUT);  // Arduino控制A4988使能引脚为输出模式
   digitalWrite(enablePin, LOW); // 将使能控制引脚设置为低电平从而让
   // 电机驱动板进入工作状态
@@ -65,6 +66,7 @@ void setup() {
   stepper2.setMaxSpeed(Maxspeed);     // 设置电机最大速度300
   stepper2.setAcceleration(Acceleration);  // 设置电机加速度20.0
   reply ("Vers:LS");
+  //  calibrateStage();
 }
 char c = '*';
 
@@ -75,16 +77,41 @@ void loop()
     processCommand(cmd);
     cmd = "";
   }
-  long newPosition = myEnc.read();
+  newPosition = myEnc.read();
+  newPosition2 = myEnc2.read();
+
   if (newPosition != oldPosition) {
     oldPosition = newPosition;
-    Serial.println(newPosition);
+//    Serial.println(newPosition);
   }
-  long newPosition2 = myEnc2.read();
+
   if (newPosition2 != oldPosition2) {
     oldPosition2 = newPosition2;
-    Serial.println(newPosition2);
+    //    Serial.println(newPosition2/3*2*stepSize_y);
   }
+
+  if (x / stepSize_x - newPosition / 3 > 20 ||  newPosition / 3 - x / stepSize_x > 20 ) {
+    stepper1.move(x / stepSize_x - newPosition / 3 );
+
+  }
+  else {
+    stepper1.stop();
+    //    Serial.println("trying stop");
+  }
+
+
+  if (y / stepSize_y - myEnc2.read()*2 / 3 * 2 > 20 ||  myEnc2.read() / 3 * 2 - y / stepSize_y > 20 ) {
+    stepper2.move(y / stepSize_y  - newPosition2 / 3 * 2);
+    Serial.print("Encoder Reads in um: ");
+    Serial.print(myEnc2.read() / 3 * 2 * stepSize_y);
+    Serial.print("   Deviation from command in um: ");
+    Serial.println(y - myEnc2.read() / 3 * 2 * stepSize_y);
+  }
+  else {
+    stepper2.stop();
+    //    Serial.println("trying stop");
+  }
+
   stepper1.run();
   stepper2.run();
 }
@@ -106,60 +133,67 @@ void processCommand(String s) {
 
   } else if (s.startsWith("?vel x")) {
     if (Mode_x == 2) {
-      reply (String(Maxspeed * stepSize / 1000)); // mm/s of the x-motor
+      reply (String(Maxspeed * stepSize_x / 1000)); // mm/s of the x-motor
     }
   } else if (s.startsWith("?vel y")) {
     if (Mode_y == 2) {
-      reply (String(Maxspeed * stepSize / 1000)); // mm/s of the y-motor
+      reply (String(Maxspeed * stepSize_y / 1000)); // mm/s of the y-motor
     }
   } else if (s.startsWith("?accel x")) {
-    reply(String(Acceleration / Reduction * stepSize / 1000000)); //converted acceleration to m/s^2
+    reply(String(Acceleration /  stepSize_x / 1000000)); //converted acceleration to m/s^2
   } else if (s.startsWith("?accel y")) {
-    reply(String(Acceleration * stepSize / 1000000)); //converted acceleration to m/s^2
+    reply(String(Acceleration / stepSize_y / 1000000)); //converted acceleration to m/s^2
 
 
     //Setting Acceleration Values
   } else if (s.startsWith("!accel x")) {
     String xa = s.substring(s.indexOf("!accel x ") + 1);
-    Acceleration = xa.toFloat() * Reduction / stepSize * 1000000; //converts m/s^2 to step/s^2
-    stepper1.setAcceleration(Acceleration);
+    //    Acceleration = xa.toFloat()*Reduction/stepSize_x*1000000;//converts m/s^2 to step/s^2
+    //    stepper1.setAcceleration(Acceleration);
+    delay(5);
   } else if (s.startsWith("!accel y")) {
     String ya = s.substring(s.indexOf("!accel y ") + 1);
-    Acceleration = ya.toFloat() * Reduction / stepSize * 1000000; //converts m/s^2 to step/s^2
-    stepper2.setAcceleration(Acceleration);
+    //    Acceleration = ya.toFloat()*Reduction/stepSize_y*1000000; //converts m/s^2 to step/s^2
+    //    stepper2.setAcceleration(Acceleration);
+    delay(5);
 
   } else if (s.startsWith("!vel y")) {
-    String yv = s.substring(s.indexOf("!vel x ") + 1);
+    String yv = s.substring(s.indexOf("!vel y ") + 1);
     float yv_num = yv.toFloat();
     if (Mode_y == 2) { // mm/sec of output
-      float vy = yv_num * Reduction / stepSize;
+      float vy = yv_num * Reduction / stepSize_y;
     }
   } else if (s.startsWith("!vel x")) {
     String xv = s.substring(s.indexOf("!vel x ") + 1);
     float xv_num = xv.toFloat();
     if (Mode_x == 2) { // mm/sec of output
-      float vx = xv_num * Reduction / stepSize;
+      float vx = xv_num * Reduction / stepSize_x;
     }
 
     //Tells micromanager if stage is moving or not
   } else if (s.startsWith("?statusaxis")) { //should return something if
-    if (1 == 1) {
-      reply ("@@@");  // used to be "just @ for z axis", should be returning MM if the motor is still moving
+    String response = "@@@";
+
+    if (stepper1.isRunning()) {
+      response[0] = 'M';
     }
-    else {
-      reply ("MMM");
+    if (stepper2.isRunning()) {
+      response[1] = 'M';
     }
+    reply(response);
+
+
 
     //Tells micromanager current stage position
   } else if (s.startsWith("?pos")) {
     if (Mode_xy == 1) { // Info should be in microns
-      String xPos = String(x);
-      String xy_pos = xPos + " " + String(y);
+      String xPos = String(stepper1.currentPosition() * stepSize_x);
+      String xy_pos = xPos + " " + String(stepper2.currentPosition() * stepSize_y);
       reply (xy_pos);
     }
     else if (Mode_xy == 0) { // Asking for current step
-      String xPos = String(int(x / stepSize), 1);
-      String xy_pos = xPos + " " + String(int(y / stepSize), 1);
+      String xPos = String(stepper1.currentPosition(), 1);
+      String xy_pos = xPos + " " + String(stepper2.currentPosition(), 1);
       reply (xy_pos);
     }
 
@@ -175,56 +209,54 @@ void processCommand(String s) {
   } else if (s.startsWith("!dim y 2")) { // switch to steps
     Mode_y = 2;
 
-  // Relative Motion Control
+    // Relative Motion Control
   } else if (s.startsWith("!mor ")) {   //relative motion
     firstSpace = s.indexOf(' ');
-    secondSpace = s.indexOf(' ', firstSpace+1);
-    String delta_x = s.substring(firstSpace,secondSpace);
+    secondSpace = s.indexOf(' ', firstSpace + 1);
+    String delta_x = s.substring(firstSpace, secondSpace);
     String delta_y = s.substring(secondSpace);//Serial.print(apos_y);
     float delta_x_num = delta_x.toFloat();
     float delta_y_num = delta_y.toFloat();
-      if (Mode_xy == 0){ 
-      delta_x_num = delta_x_num*stepSize;
-      delta_y_num = delta_y_num*stepSize;
-      }
+    if (Mode_xy == 0) {
+      delta_x_num = delta_x_num * stepSize_x;
+      delta_y_num = delta_y_num * stepSize_y;
+    }
     x = x + delta_x_num;
     y = y + delta_y_num;
     turnServoXY();
 
-
-  // Absolute Motion Control  
+    // Absolute Motion Control
   } else if (s.startsWith("!moa ")) {   //relative motion, assume in um
     firstSpace = s.indexOf(' ');
-    secondSpace = s.indexOf(' ', firstSpace+1);
-    String apos_x = s.substring(firstSpace,secondSpace);
+    secondSpace = s.indexOf(' ', firstSpace + 1);
+    String apos_x = s.substring(firstSpace, secondSpace);
     String apos_y = s.substring(secondSpace);//Serial.print(apos_y);
     float apos_x_num = apos_x.toFloat();
     float apos_y_num = apos_y.toFloat();
-    if (Mode_xy == 0){ 
-      apos_x_num = apos_x_num*stepSize;
-      apos_y_num = apos_y_num*stepSize;
-      }
+    if (Mode_xy == 0) {
+      apos_x_num = apos_x_num * stepSize_x;
+      apos_y_num = apos_y_num * stepSize_y;
+    }
     x = apos_x_num;
-    y = apos_y_num;   
+    y = apos_y_num;
     turnServoXY();
-    // Setting boundaries for x and y in microns
 
     // Setting boundaries for x and y in microns
   } else if (s.startsWith("?lim x")) {
-    if (Mode_xy==1){
+    if (Mode_xy == 1) {
       reply ("-10000.0 10000.0"); // gonna need to check this with Infrastructure
-      }
-    else if (Mode_xy==0){
+    }
+    else if (Mode_xy == 0) {
       reply ("-10000.0 10000.0"); // gonna need to check this with Infrastructure
-      }
+    }
   } else if (s.startsWith("?lim y")) {
-    if (Mode_xy==1){
+    if (Mode_xy == 1) {
       reply ("-10000.0 10000.0"); // gonna need to check this with Infrastructure
-      }
-    else if (Mode_xy==0){
+    }
+    else if (Mode_xy == 0) {
       reply ("-10000.0 10000.0"); // gonna need to check this with Infrastructure
-      }
-      
+    }
+
     // Origins and Callibrations
   } else if (s.startsWith("!cal x")) {  //scalibrate x origin
     x = 0.0;
@@ -237,6 +269,8 @@ void processCommand(String s) {
     y = 0.0;
     stepper1.setCurrentPosition(0.0);
     stepper2.setCurrentPosition(0.0);
+    myEnc.write(0.0);
+    myEnc2.write(0.0);
   } else if (s.startsWith("!pos ")) {   //setting arbitrary position
     String x_set = s.substring(s.indexOf("!pos ") + 1);
     String y_set = s.substring(s.indexOf("!pos ") + 3);
@@ -244,7 +278,8 @@ void processCommand(String s) {
     y = y_set.toFloat();
     stepper1.setCurrentPosition(x);
     stepper2.setCurrentPosition(y);
-
+    myEnc.write(x / stepSize_x / 3);
+    myEnc2.write(x / stepSize_y / 3 * 2); //Need to include the *2 to because step size of y motor is 0.9 instead of 1.8
   } else if (s.startsWith("?status")) {
     reply ("OK...");
   } else if (s.startsWith("!rm ")) { // Range measure mode, not neccessary
@@ -280,13 +315,30 @@ void turnServoXY() {
   stepper1.moveTo(x * 10);
 
   if (x != newPosition) {
-    stepper1.moveTo((x - newPosition/3) * 10);
+    stepper1.moveTo((x - newPosition / 3) * 10);
   }
-    stepper2.moveTo(y * 10);
+  stepper2.moveTo(y * 10);
 
-    if (y != newPosition) {
-      stepper1.moveTo((y - newPosition2/3) * 10);
+  if (y != newPosition) {
+    stepper1.moveTo((y - newPosition2 / 3) * 10);
 
+  }
+
+}
+
+void calibrateStage() {   //calibration of system to the limit switches
+  stepper1.moveTo(-100000);
+  stepper2.move(-100000);
+  while (!digitalRead(x_LimPin) && !digitalRead(y_LimPin)) {
+    if (!digitalRead(x_LimPin)) {
+      stepper1.run();
     }
-
+    if (!digitalRead(y_LimPin)) {
+      stepper2.run();
+    }
   }
+  stepper1.setCurrentPosition(0.0);
+  stepper2.setCurrentPosition(0.0);
+  myEnc.write(0.0);
+  myEnc2.write(0.0);
+}

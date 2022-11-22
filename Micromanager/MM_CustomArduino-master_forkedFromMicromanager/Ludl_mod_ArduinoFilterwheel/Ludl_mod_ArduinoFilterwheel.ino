@@ -15,20 +15,27 @@
 
 #include <Servo.h>
 int pos;                    // Will be used later for smoothing out servo control
+const int extraVolts = 3;   // Extra voltage supply for one of the filter wheels
 Servo camFilter;
 Servo lampFilter;
 String cmd = "" ;
 const int camSig = 5;
+const int lampSig = 3;
 float TransDelay = 10.0;   //Defines transmission delay between filterwheel and micromanager
 int camPos = 0;
 int camPos_deg = 0;
 
 void setup() {
+  pinMode(extraVolts,OUTPUT);
+  digitalWrite(extraVolts,HIGH);
   // Initialize filter positions
   camFilter.attach(camSig);
   camFilter.write(camPos);
+  lampFilter.attach(lampSig);
+  lampFilter.write(camPos);
   delay(1000);
   camFilter.detach();
+  lampFilter.detach();
 
   // Initialize connectiton to micromanager
   Serial.begin(9600);
@@ -118,20 +125,24 @@ void processCommand(String s){
 void turnServo(){
     camPos_deg = map(camPos,0,2,0,150);
     camFilter.attach(camSig);
+    lampFilter.attach(lampSig);
     int oldPos_deg = camFilter.read();
     if (camPos_deg>oldPos_deg){
          for (int pos = oldPos_deg; pos <= camPos_deg; pos += 1) { // goes from 0 degrees to 180 degrees
               // in steps of 1 degree
               camFilter.write(camPos_deg);
+              lampFilter.write(camPos_deg);
               delay(10);      
          }
     }
     else{
          for (int pos = oldPos_deg; pos >= camPos_deg; pos -= 1) { // goes from 0 degrees to 180 degrees
               // in steps of 1 degree
-              camFilter.write(pos);
+              camFilter.write(camPos_deg);
+              lampFilter.write(camPos_deg);
               delay(10);      
          }      
       }
     camFilter.detach();
+    lampFilter.detach();
 }

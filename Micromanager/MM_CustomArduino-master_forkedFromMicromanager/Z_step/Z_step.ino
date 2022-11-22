@@ -23,8 +23,19 @@ const int enablePin = 8;  // 使能控制引脚
  
 const int zdirPin = 5;     // z方向控制引脚 (用的是cnc shield上的x)
 const int zstepPin = 2;    // z步进控制引脚
- 
+const int zdirPin2 = 6;     // z2方向控制引脚 (用的是cnc shield上的y)
+const int zstepPin2 = 3;    // z2步进控制引脚
+
+const float Maxspeed = 30000.0;        //step/s
+const int Acceleration = 1000;     //step/s^2
+const float Reduction = 10;     //Reduction ratio for actuators
+const float BaseRes = 1.8;        //Base resolution of actuator in deg
+const float Pitch = 2000.0;       //Lead screw pitch in microns
+const float stepSize = Pitch / Reduction / 360 * BaseRes; // step size of motor in microns
+
 AccelStepper stepper1(1,zstepPin,zdirPin);//建立步进电机对象1
+AccelStepper stepper2(1,zstepPin2,zdirPin2);//建立步进电机对象2
+
 String cmd = "" ;
 float z = 0.0;
 
@@ -32,14 +43,18 @@ void setup() {
   Serial.begin( 9600 );
   pinMode(zstepPin,OUTPUT);     // Arduino控制A4988x步进引脚为输出模式
   pinMode(zdirPin,OUTPUT);      // Arduino控制A4988x方向引脚为输出模式
+  pinMode(zstepPin2,OUTPUT);     // Arduino控制A4988x步进引脚为输出模式
+  pinMode(zdirPin2,OUTPUT);      // Arduino控制A4988x方向引脚为输出模式
   
   pinMode(enablePin,OUTPUT);   // Arduino控制A4988使能引脚为输出模式
   digitalWrite(enablePin,LOW); // 将使能控制引脚设置为低电平从而让
                                // 电机驱动板进入工作状态
                                 
-  stepper1.setMaxSpeed(400.0);     // 设置电机最大速度300 
-  stepper1.setAcceleration(100.0);  // 设置电机加速度20.0  
-  reply ("Vers:LS");
+  stepper1.setMaxSpeed(Maxspeed);     // step/s
+  stepper1.setAcceleration(Acceleration);  //step/s^2
+  stepper2.setMaxSpeed(Maxspeed);     // step/s
+  stepper2.setAcceleration(Acceleration);  //step/s^2
+  reply ("Vers:LS_forZAxis");
 }
 char c = '*';
 
@@ -50,6 +65,10 @@ void loop()
     processCommand(cmd);
     cmd = "";
   }
+  stepper1.run();
+  stepper2.run();
+  //Serial.println(stepper1.currentPosition());
+
 }
 
 void processCommand(String s) {
@@ -108,7 +127,7 @@ void reply(String s) {
 }
 
 void turnServo() {
-    stepper1.moveTo(z*10);
-    stepper1.runToPosition();
+    stepper1.moveTo(z/stepSize);
+    stepper2.moveTo(z/stepSize);
     Serial.println(z);
   }

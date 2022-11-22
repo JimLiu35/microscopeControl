@@ -51,15 +51,15 @@ void loop()
 //    Serial.println (z);
 //    Serial.print("adj: ");
 //    Serial.println (z - newPosition / 3);
-  }
-//    if (z - newPosition / 3 > 20 ||  newPosition / 3 - z > 20 ) {
-//      stepper1.move(z - newPosition / 3 );
-//      
-//    }
-//    else {
-//      stepper1.stop();
-//      Serial.println("trying stop");
-//      }
+//  }
+    if (z - newPosition / 3 > 20 ||  newPosition / 3 - z > 20 ) {
+      stepper1.move(z - newPosition / 3 );
+      
+    }
+    else {
+      stepper1.stop();
+      Serial.println("trying stop");
+      }
 //    if ( newPosition / 3 - z > 10) {
 //      stepper1.move(z - newPosition / 3 );
 //    }
