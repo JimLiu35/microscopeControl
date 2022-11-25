@@ -17,7 +17,7 @@
 // StopBits,1
 
 #include <AccelStepper.h>
-
+#include <Encoder.h>
 // 定义电机控制用常量
 const int enablePin = 8;  // 使能控制引脚
 
@@ -27,14 +27,22 @@ const int zdirPin2 = 6;     // z2方向控制引脚 (用的是cnc shield上的y)
 const int zstepPin2 = 3;    // z2步进控制引脚
 
 const float Maxspeed = 30000.0;        //step/s
-const int Acceleration = 1000;     //step/s^2
+const float Acceleration = 1000;     //step/s^2
 const float Reduction = 10;     //Reduction ratio for actuators
 const float BaseRes = 1.8;        //Base resolution of actuator in deg
 const float Pitch = 2000.0;       //Lead screw pitch in microns
 const float stepSize = Pitch / Reduction / 360 * BaseRes; // step size of motor in microns
 const int limitswitchPin = 14;   // setup the pin
+
 AccelStepper stepper1(1, zstepPin, zdirPin); //建立步进电机对象1
 AccelStepper stepper2(1, zstepPin2, zdirPin2); //建立步进电机对象2
+Encoder myEnc2(18, 19);
+Encoder myEnc(20, 21);
+
+long newPosition = 0.0;
+long oldPosition  = -999.0;
+long newPosition2 = 0.0;
+long oldPosition2  = -999.0;
 
 String cmd = "" ;
 float z = 0.0;
@@ -67,12 +75,44 @@ void loop()
       processCommand(cmd);
       cmd = "";
     }
+    //    newPosition = myEnc.read();
+    //    newPosition2 = myEnc2.read();
+    //
+    //
+    //    if (newPosition != oldPosition) {
+    //      oldPosition = newPosition;
+    //      //    Serial.println(newPosition);
+    //    }
+    //
+    //    if (newPosition2 != oldPosition2) {
+    //      oldPosition2 = newPosition2;
+    //      //    Serial.println(newPosition2/3*2*stepSize_y);
+    //    }
+    //
+    //    if (z - newPosition / 3 > 20 ||  newPosition / 3 - z > 20 ) {
+    //      stepper1.move(z - newPosition / 3 );
+    //      stepper2.move(z - newPosition / 3 );
+    //
+    //    }
+
+    turnServo();
+    stepper1.setMaxSpeed(Maxspeed);     // step/s
+    stepper1.setAcceleration(Acceleration);  //step/s^2
+    stepper2.setMaxSpeed(Maxspeed);     // step/s
+    stepper2.setAcceleration(Acceleration);  //step/s^2
     stepper1.run();
     stepper2.run();
-    //Serial.println(stepper1.currentPosition());
+    Serial.println(stepper1.speed());
   }
 
   else {
+    delay(200);
+    //stepper1.stop();
+    stepper1.setSpeed(0);
+    stepper1.setAcceleration(0);
+    //stepper2.stop();
+    stepper2.setSpeed(0);
+    stepper2.setAcceleration(0);
     Serial.println("STOP");
   }
 }
@@ -96,7 +136,8 @@ void processCommand(String s) {
   } else if (s.startsWith("!dim z 2")) {
     delay(5);
   } else if (s.startsWith("?statusaxis")) {
-    reply ("@");
+    if (stepper1.isRunning()||stepper2.isRunning()){reply ("M");}
+    else {reply("@");}
   } else if (s.startsWith("!vel z")) {
     delay(5);
   } else if (s.startsWith("!accel z")) {
@@ -136,5 +177,5 @@ void reply(String s) {
 void turnServo() {
   stepper1.moveTo(z / stepSize);
   stepper2.moveTo(z / stepSize);
-  Serial.println(z);
+//  Serial.println(z);
 }

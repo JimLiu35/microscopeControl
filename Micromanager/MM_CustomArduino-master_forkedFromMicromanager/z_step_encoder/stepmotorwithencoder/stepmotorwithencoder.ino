@@ -39,31 +39,31 @@ void loop()
     processCommand(cmd);
     cmd = "";
   }
-//  stepper1.run();
+  //  stepper1.run();
 
 
-//  long newPosition = myEnc.read();
-//  if (newPosition != oldPosition) {
-//    oldPosition = newPosition;
-//    Serial.print("newPosition: ");
-//    Serial.println(newPosition/3);
-//    Serial.print("z: ");
-//    Serial.println (z);
-//    Serial.print("adj: ");
-//    Serial.println (z - newPosition / 3);
-//  }
-    if (z - newPosition / 3 > 20 ||  newPosition / 3 - z > 20 ) {
-      stepper1.move(z - newPosition / 3 );
-      
-    }
-    else {
-      stepper1.stop();
-      Serial.println("trying stop");
-      }
-//    if ( newPosition / 3 - z > 10) {
-//      stepper1.move(z - newPosition / 3 );
-//    }
- stepper1.run(); 
+  //  long newPosition = myEnc.read();
+  //  if (newPosition != oldPosition) {
+  //    oldPosition = newPosition;
+  //    Serial.print("newPosition: ");
+  //    Serial.println(newPosition/3);
+  //    Serial.print("z: ");
+  //    Serial.println (z);
+  //    Serial.print("adj: ");
+  //    Serial.println (z - newPosition / 3);
+  //  }
+  if (z - newPosition / 3 > 20 ||  newPosition / 3 - z > 20 ) {
+    stepper1.move(z - newPosition / 3 );
+
+  }
+  else {
+    stepper1.stop();
+    Serial.println("trying stop");
+  }
+  //    if ( newPosition / 3 - z > 10) {
+  //      stepper1.move(z - newPosition / 3 );
+  //    }
+  stepper1.run();
 }
 
 void processCommand(String s) {
