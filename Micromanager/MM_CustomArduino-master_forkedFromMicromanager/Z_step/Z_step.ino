@@ -48,7 +48,8 @@ String cmd = "" ;
 float z = 0.0;
 
 void setup() {
-  Serial.begin( 9600 );
+  Serial.begin( 115200 );       //Use for 115200 Baud Rate
+  //Serial.begin( 9600 );         //Use for 115200 Baud Rate
   pinMode(zstepPin, OUTPUT);    // Arduino控制A4988x步进引脚为输出模式
   pinMode(zdirPin, OUTPUT);     // Arduino控制A4988x方向引脚为输出模式
   pinMode(zstepPin2, OUTPUT);    // Arduino控制A4988x步进引脚为输出模式
@@ -102,7 +103,7 @@ void loop()
     stepper2.setAcceleration(Acceleration);  //step/s^2
     stepper1.run();
     stepper2.run();
-    Serial.println(stepper1.speed());
+//    Serial.println(stepper1.speed());
   }
 
   else {
@@ -113,7 +114,7 @@ void loop()
     //stepper2.stop();
     stepper2.setSpeed(0);
     stepper2.setAcceleration(0);
-    Serial.println("STOP");
+//    Serial.println("STOP");
   }
 }
 
@@ -126,7 +127,7 @@ void processCommand(String s) {
   } else if (s.startsWith("?det")) {
     reply ("60");
   } else if (s.startsWith("?pitch z")) {
-    reply ("50.0");
+    reply ("2000.0");
   } else if (s.startsWith("?vel z")) {
     reply ("100.0");
   } else if (s.startsWith("?accel z")) {
@@ -136,7 +137,7 @@ void processCommand(String s) {
   } else if (s.startsWith("!dim z 2")) {
     delay(5);
   } else if (s.startsWith("?statusaxis")) {
-    if (stepper1.isRunning()||stepper2.isRunning()){reply ("M");}
+    if (stepper1.speed()!=0||stepper2.speed()!=0){reply ("M");}
     else {reply("@");}
   } else if (s.startsWith("!vel z")) {
     delay(5);
@@ -146,7 +147,7 @@ void processCommand(String s) {
     String zs = String(z, 1);
     reply (zs);
   } else if (s.startsWith("?lim z")) {
-    reply ("0.0 100.0");
+    reply ("-100000000000000000.0 1000000000000000000.0");
   } else if (s.startsWith("!pos z")) {
     delay(5);
   } else if (s.startsWith("?status")) {
@@ -169,8 +170,8 @@ void processCommand(String s) {
 }
 
 void reply(String s) {
-  Serial.print(s);
-  Serial.print("\r");
+ Serial.print(s);
+ Serial.print("\r");
 
 }
 
