@@ -1,5 +1,5 @@
 //Allows building simple filterwheel with 3 states
-//version 1.0
+//version 3.0(final)
 // DY 2022
 
 // References
@@ -22,7 +22,8 @@ const int camSig = 5;
 const int lampSig = 3;
 float TransDelay = 10.0;   //Defines transmission delay between filterwheel and micromanager
 int camPos = 0;
-int camPos_deg = 150;
+int lampPos = 0;
+int camPos_deg = 0;
 int lampPos_deg = 0;
 const int BF_pin = 8;
 void setup() {
@@ -30,14 +31,14 @@ void setup() {
   camFilter.attach(camSig);
   camFilter.write(camPos);
   lampFilter.attach(lampSig);
-  lampFilter.write(camPos);
+  lampFilter.write(lampPos);
   delay(1000);
   camFilter.detach();
   lampFilter.detach();
   pinMode(BF_pin, OUTPUT);
   digitalWrite(BF_pin, LOW);
   // Initialize connectiton to micromanager
-   //Serial.begin(115200);
+  //  Serial.begin(115200);
   Serial.begin(9600);
   reply("Vers:dd");
 }
@@ -106,9 +107,11 @@ void processCommand(String s) {
     String cmd = s.substring(s.indexOf("M") + 1, s.length());
     if (cmd == "H") {
       camPos = 1;
+      lampPos =1;
     }
     else {
       camPos = cmd.toFloat();
+      lampPos = cmd.toFloat();
     }
     turnServo();
     reply("AA");
@@ -133,10 +136,11 @@ void processCommand(String s) {
 void turnServo() {
   if (camPos < 1) {
     camPos = 1;
+    lampPos = 1;
   }
   camPos_deg = map(camPos, 1, 3, 0, 150);
+  lampPos_deg = map(lampPos, 1, 3, 0, 150);
   camFilter.attach(camSig);
-  lampPos_deg = map(camPos, 1, 3, 0, 150);
   lampFilter.attach(lampSig);
   int oldPos_deg = camFilter.read();
   if (camPos_deg > oldPos_deg) {
