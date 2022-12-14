@@ -23,7 +23,7 @@ const float BaseRes_y = 0.9;        //Base resolution of actuator in deg
 const float BaseRes_x = 1.8;        //Base resolution of actuator in deg
 const float Pitch = 2000.0;       //Lead screw pitch in microns
 const float stepSize_x = Pitch / Reduction / 360.0 * BaseRes_x; // step size of motor in microns
-const float stepSize_y = Pitch / Reduction / 360.0 * BaseRes_y; // step size of motor in microns
+const float stepSize_y = -Pitch / Reduction / 360.0 * BaseRes_y; // step size of motor in microns
 
 AccelStepper stepper1(1, xstepPin, xdirPin); //建立步进电机对象1
 AccelStepper stepper2(1, ystepPin, ydirPin); //建立步进电机对象2
