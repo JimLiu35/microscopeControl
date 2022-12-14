@@ -1,5 +1,5 @@
 //Allows building simple filterwheel with 3 states
-//version 1.0
+//version 3.0
 // DY 2022
 
 // References
@@ -24,6 +24,7 @@ const int lampSig = 3;
 float TransDelay = 10.0;   //Defines transmission delay between filterwheel and micromanager
 int camPos = 0;
 int camPos_deg = 0;
+int lampPos_deg = 0;
 
 void setup() {
   pinMode(extraVolts,OUTPUT);
@@ -123,7 +124,8 @@ void processCommand(String s){
 }
 
 void turnServo(){
-    camPos_deg = map(camPos,0,2,0,150);
+    camPos_deg = map(camPos,1,3,150,0);
+    lampPos_deg = map(camPos,1,3,0,150);
     camFilter.attach(camSig);
     lampFilter.attach(lampSig);
     int oldPos_deg = camFilter.read();
@@ -131,7 +133,7 @@ void turnServo(){
          for (int pos = oldPos_deg; pos <= camPos_deg; pos += 1) { // goes from 0 degrees to 180 degrees
               // in steps of 1 degree
               camFilter.write(camPos_deg);
-              lampFilter.write(camPos_deg);
+              lampFilter.write(lampPos_deg);
               delay(10);      
          }
     }
@@ -139,7 +141,7 @@ void turnServo(){
          for (int pos = oldPos_deg; pos >= camPos_deg; pos -= 1) { // goes from 0 degrees to 180 degrees
               // in steps of 1 degree
               camFilter.write(camPos_deg);
-              lampFilter.write(camPos_deg);
+              lampFilter.write(lampPos_deg);
               delay(10);      
          }      
       }

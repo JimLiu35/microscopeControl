@@ -1,3 +1,4 @@
+// version 3.0(final)
 
 #include <AccelStepper.h>
 #include <Encoder.h>
@@ -12,12 +13,12 @@ const int limitswitchPin = 14;   // setup the pin
 bool state_x = 0;
 bool state_y = 0;
 
-const float tolerance = 3.0;
+const float tolerance = 1.0;
 const int x_LimPin = 11;    // x limit switch pinout
 const int y_LimPin = 12;    // y limit switch pinout
 
-const float Maxspeed = 800.0;        //step/s
-const float Acceleration = 400.0;     //step/s^2
+const float Maxspeed = 5000.0;        //step/s
+const float Acceleration = 1000.0;     //step/s^2
 const float Reduction = 1.0;     //Reduction ratio for actuators
 const float BaseRes_y = 0.9;        //Base resolution of actuator in deg
 const float BaseRes_x = 1.8;        //Base resolution of actuator in deg
@@ -41,8 +42,8 @@ float y = 0.0;
 float x_old = x;
 float y_old = y;
 
-Encoder myEnc2(18, 19);
-Encoder myEnc(20, 21);
+Encoder Enc_y(18, 19);
+Encoder Enc_x(20, 21);
 //   avoid using pins with LEDs attached
 long newPosition = 0.0;
 long oldPosition  = -999.0;
@@ -52,7 +53,8 @@ long oldPosition2  = -999.0;
 
 
 void setup() {
-  Serial.begin( 115200 );
+  //Serial.begin(115200);
+  Serial.begin(9600);
   pinMode(xstepPin, OUTPUT);    // Arduino控制A4988x步进引脚为输出模式
   pinMode(xdirPin, OUTPUT);     // Arduino控制A4988x方向引脚为输出模式
   pinMode(ystepPin, OUTPUT);    // Arduino控制A4988y步进引脚为输出模式
@@ -66,7 +68,7 @@ void setup() {
   stepper1.setAcceleration(Acceleration);  // 设置电机加速度20.0
   stepper2.setMaxSpeed(Maxspeed);     // 设置电机最大速度300
   stepper2.setAcceleration(Acceleration);  // 设置电机加速度20.0
-  reply ("Vers:LS");
+  reply ("Vers:LS_xy");
   //  calibrateStage();
 }
 char c = '*';
@@ -79,8 +81,8 @@ void loop()
       processCommand(cmd);
       cmd = "";
     }
-    newPosition = myEnc.read();
-    newPosition2 = myEnc2.read();
+    newPosition = Enc_x.read();
+    newPosition2 = Enc_y.read();
 
     if (newPosition != oldPosition) {
       oldPosition = newPosition;
@@ -92,9 +94,9 @@ void loop()
       //    Serial.println(newPosition2/3*2*stepSize_y);
     }
 
-    if (x / stepSize_x - newPosition / 3.0 > tolerance ||  newPosition / 3.0 - x / stepSize_x > tolerance ) {
-      stepper1.move(x / stepSize_x - newPosition / 3.0 );
-      stepper2.setAcceleration(Acceleration);
+    if (x / stepSize_x - Enc_x.read() / 3.0 / 4.0 > tolerance ||  Enc_x.read() / 3.0 / 4.0 - x / stepSize_x > tolerance ) {
+      stepper1.move(x / stepSize_x - newPosition / 3.0 / 4.0 );
+      stepper1.setAcceleration(Acceleration);
       stepper1.run();
     }
     else {
@@ -105,12 +107,12 @@ void loop()
     }
 
 
-    if (y / stepSize_y - myEnc2.read() * 2.0 / 3.0  > tolerance ||  myEnc2.read() / 3.0 * 2.0 - y / stepSize_y > tolerance ) {
-      stepper2.move(y / stepSize_y  - newPosition2 / 3.0 * 2.0);
+    if (y / stepSize_y - Enc_y.read() * 2.0 / 3.0 / 4.0  > tolerance ||  Enc_y.read() / 3.0 / 4.0 * 2.0 - y / stepSize_y > tolerance ) {
+      stepper2.move(y / stepSize_y  - newPosition2 / 3.0 / 4.0 * 2.0);
       //    Serial.print("Encoder Reads in um: ");
-      //    Serial.print(myEnc2.read() / 3.0 * 2.0 * stepSize_y);
+      //    Serial.print(Enc_y.read() / 3.0 * 2.0 * stepSize_y);
       //    Serial.print("   Deviation from command in um: ");
-      //    Serial.println(y - myEnc2.read() / 3.0 * 2.0 * stepSize_y);
+      //    Serial.println(y - Enc_y.read() / 3.0 * 2.0 * stepSize_y);
       stepper2.setAcceleration(Acceleration);
       stepper2.run();
     }
@@ -123,14 +125,15 @@ void loop()
 
 
 
-    Serial.println( newPosition2 / 3.0 * 2.0 * stepSize_y); //Current position in y
+//    Serial.println( newPosition2 / 3.0 * 2.0 * stepSize_y); //Current position in y
 //    Serial.println(" Target position is " + String(y));
 //    Serial.println("Command is "+ String(y   - newPosition2 / 3.0 * 2.0 * stepSize_y));
 //     Serial.println("RUN");
   }
 
   else {
-    Serial.println("STOP");
+    delay(10);
+//    Serial.println("STOP");
   }
 }
 void processCommand(String s) {
@@ -154,9 +157,7 @@ void processCommand(String s) {
     }
   } else if (s.startsWith("?vel y")) {
     if (Mode_y == 2) {
-      reply (String(stepper2.speed() * stepSize_y / 1000)); // mm/s of the y-motor
-      delay(10000);
-      
+      reply (String(stepper2.speed() * stepSize_y / 1000)); // mm/s of the y-motor      
     }
   } else if (s.startsWith("?accel x")) {
     reply(String(Acceleration /  stepSize_x / 1000000)); //converted acceleration to m/s^2
@@ -193,10 +194,10 @@ void processCommand(String s) {
   } else if (s.startsWith("?statusaxis")) { //should return something if
     String response = "@@@";
 
-    if (stepper1.isRunning()) {
+    if (stepper1.speed()) {
       response[0] = 'M';
     }
-    if (stepper2.isRunning()) {
+    if (stepper2.speed()) {
       response[1] = 'M';
     }
     reply(response);
@@ -206,13 +207,13 @@ void processCommand(String s) {
     //Tells micromanager current stage position
   } else if (s.startsWith("?pos")) {
     if (Mode_xy == 1) { // Info should be in microns
-      String xPos = String(stepper1.currentPosition() * stepSize_x);
-      String xy_pos = xPos + " " + String(stepper2.currentPosition() * stepSize_y);
+      String xPos = String(Enc_x.read() /3.0 / 4.0 * stepSize_x);
+      String xy_pos = xPos + " " + String(Enc_y.read() /3.0 / 4.0 *2.0 * stepSize_y);
       reply (xy_pos);
     }
     else if (Mode_xy == 0) { // Asking for current step
-      String xPos = String(stepper1.currentPosition(), 1);
-      String xy_pos = xPos + " " + String(stepper2.currentPosition(), 1);
+      String xPos = String(Enc_x.read() /3.0 / 4.0, 1);
+      String xy_pos = xPos + " " + String(Enc_y.read() /3.0 / 4.0 *2.0, 1);
       reply (xy_pos);
     }
 
@@ -258,18 +259,18 @@ void processCommand(String s) {
     }
     x = apos_x_num;
     y = apos_y_num;
-    reply("position for x and y");
-    Serial.print(x);
-    Serial.print(y);
+//    reply("position for x and y");
+//    Serial.print(x);
+//    Serial.print(y);
     //    turnServoXY();
 
     // Setting boundaries for x and y in microns
   } else if (s.startsWith("?lim x")) {
     if (Mode_xy == 1) {
-      reply ("-10000.0 10000.0"); // gonna need to check this with Infrastructure
+      reply ("-100000000000000.0 100000000000000.0"); // gonna need to check this with Infrastructure
     }
     else if (Mode_xy == 0) {
-      reply ("-10000.0 10000.0"); // gonna need to check this with Infrastructure
+      reply ("-100000000000000.0 100000000000000.0"); // gonna need to check this with Infrastructure
     }
   } else if (s.startsWith("?lim y")) {
     if (Mode_xy == 1) {
@@ -291,8 +292,8 @@ void processCommand(String s) {
     y = 0.0;
     stepper1.setCurrentPosition(0.0);
     stepper2.setCurrentPosition(0.0);
-    myEnc.write(0.0);
-    myEnc2.write(0.0);
+    Enc_x.write(0.0);
+    Enc_y.write(0.0);
   } else if (s.startsWith("!pos ")) {   //setting arbitrary position
     String x_set = s.substring(s.indexOf("!pos ") + 1);
     String y_set = s.substring(s.indexOf("!pos ") + 3);
@@ -300,8 +301,8 @@ void processCommand(String s) {
     y = y_set.toFloat();
     stepper1.setCurrentPosition(x);
     stepper2.setCurrentPosition(y);
-    myEnc.write(x / stepSize_x / 3);
-    myEnc2.write(x / stepSize_y / 3 * 2); //Need to include the *2 to because step size of y motor is 0.9 instead of 1.8
+    Enc_x.write(x / stepSize_x / 3);
+    Enc_y.write(x / stepSize_y / 3 * 2); //Need to include the *2 to because step size of y motor is 0.9 instead of 1.8
   } else if (s.startsWith("?status")) {
     reply ("OK...");
   } else if (s.startsWith("!rm ")) { // Range measure mode, not neccessary
@@ -361,6 +362,6 @@ void calibrateStage() {   //calibration of system to the limit switches
   }
   stepper1.setCurrentPosition(0.0);
   stepper2.setCurrentPosition(0.0);
-  myEnc.write(0.0);
-  myEnc2.write(0.0);
+  Enc_x.write(0.0);
+  Enc_y.write(0.0);
 }
