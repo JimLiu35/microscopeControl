@@ -24,7 +24,7 @@ float TransDelay = 10.0;   //Defines transmission delay between filterwheel and 
 int camPos = 0;
 int camPos_deg = 150;
 int lampPos_deg = 0;
-const int BF_pin = 9;
+const int BF_pin = 8;
 void setup() {
   // Initialize filter positions
   camFilter.attach(camSig);
@@ -134,7 +134,7 @@ void turnServo() {
   if (camPos < 1) {
     camPos = 1;
   }
-  camPos_deg = map(camPos, 3, 1, 0, 150);
+  camPos_deg = map(camPos, 1, 3, 0, 150);
   camFilter.attach(camSig);
   lampPos_deg = map(camPos, 1, 3, 0, 150);
   lampFilter.attach(lampSig);

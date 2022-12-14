@@ -1,5 +1,5 @@
 //Allows building simple filterwheel with 3 states
-//version 1.0
+//version 3.0(final)
 // DY 2022
 
 // References
@@ -25,7 +25,7 @@ int camPos = 0;
 int lampPos = 0;
 int camPos_deg = 0;
 int lampPos_deg = 0;
-const int BF_pin = 9;
+const int BF_pin = 8;
 void setup() {
   // Initialize filter positions
   camFilter.attach(camSig);
@@ -136,10 +136,10 @@ void processCommand(String s) {
 void turnServo() {
   if (camPos < 1) {
     camPos = 1;
-    lampPos = 3;
+    lampPos = 1;
   }
   camPos_deg = map(camPos, 1, 3, 0, 150);
-  lampPos_deg = map(lampPos, 1, 3, 150, 0);
+  lampPos_deg = map(lampPos, 1, 3, 0, 150);
   camFilter.attach(camSig);
   lampFilter.attach(lampSig);
   int oldPos_deg = camFilter.read();

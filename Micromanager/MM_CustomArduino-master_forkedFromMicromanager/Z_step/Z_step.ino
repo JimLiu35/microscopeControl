@@ -1,7 +1,6 @@
 // An arduino firmware that can be used with the Micro-Manager LStep Z-Stage device adaptor.
 // Allows building simple 1-axis stage devices.
-// version 0.1
-// JM 2016-2018
+// version 3.0(final)
 
 // References
 // https://micro-manager.org/wiki/MarzhauserLStep
