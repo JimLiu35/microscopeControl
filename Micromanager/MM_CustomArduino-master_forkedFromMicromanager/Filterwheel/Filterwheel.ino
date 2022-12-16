@@ -1,6 +1,6 @@
 //Allows building simple filterwheel with 3 states
 //version 3.0(final)
-// DY, XZ, YM 2022
+// DY, ZX, YM 2022
 
 // References
 // Ludl Filter wheel from Micromanager
